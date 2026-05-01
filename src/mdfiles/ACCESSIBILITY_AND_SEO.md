@@ -239,3 +239,272 @@ To **prevent** a page from being indexed (e.g., a private dashboard), change to 
 ---
 
 *Last updated: April 30, 2026*
+
+---
+
+## 7. Canonical & Meta Tags — What They Are and Why They Matter
+
+### 🤔 What is a canonical tag, in human language?
+
+Imagine your website is a book. The same chapter can be printed in three different editions — hardcover, paperback, and digital. They all have the same words, but different ISBNs.
+
+Google sees your page the same way. Your homepage might be reachable at:
+- `yoursite.com/`
+- `yoursite.com/?utm_source=twitter`
+- `yoursite.com/index.html`
+
+Without a canonical tag, Google thinks those are **three separate pages with identical content** and penalises you for "duplicate content" — splitting your ranking power across all three.
+
+The canonical tag says: *"No matter which URL you arrived at, THIS is the one official version. Index only this one."*
+
+```html
+<link rel="canonical" href="https://yoursite.com/" />
+```
+
+| Part | What it means in plain English |
+|------|--------------------------------|
+| `<link>` | A relationship tag — it doesn't display anything, it just declares a relationship |
+| `rel="canonical"` | The type of relationship: "this is the canonical (official) version" |
+| `href="..."` | The exact URL Google should treat as the real one — always use the full `https://` address |
+
+---
+
+### 🤔 What is a meta tag, in human language?
+
+A meta tag is a **note you leave for browsers and search engines inside `<head>`**. Visitors never see it — it's invisible on the page. But Google, Twitter, Facebook, and screen readers all read it.
+
+Think of it like the label on a shipping box. The box contains your website. The label tells the delivery person (Google) what's inside, where it came from, and how to handle it — without them having to open the box.
+
+---
+
+### 🧩 The `SEOHead` component — line by line
+
+We created `src/components/SEOHead.tsx` to manage all SEO tags dynamically. Here's every line explained:
+
+#### The `upsertMeta` helper function
+
+```ts
+function upsertMeta(attr: string, value: string, content: string) {
+  let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${value}"]`)
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute(attr, value)
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', content)
+}
+```
+
+| Line | What it does in plain English |
+|------|-------------------------------|
+| `document.querySelector(...)` | Looks inside `<head>` to see if a tag with this attribute already exists |
+| `if (!el)` | If no existing tag was found... |
+| `document.createElement('meta')` | ...create a brand-new `<meta>` element |
+| `el.setAttribute(attr, value)` | Give it the right attribute (e.g. `name="description"`) |
+| `document.head.appendChild(el)` | Drop it into `<head>` |
+| `el.setAttribute('content', content)` | Whether we found it or just created it, set/update the actual content value |
+
+> 🧠 Why "upsert"? It's a database term: **up**date if exists, in**sert** if not. This prevents duplicate tags when React re-renders or the user navigates between pages.
+
+---
+
+#### Tag 1 — Page title
+
+```ts
+document.title = title
+```
+
+- This sets the **browser tab text** AND the **blue clickable headline** in Google search results
+- Every page must have a **unique** title — Google uses it as the strongest signal for what the page is about
+- Keep it under 60 characters or Google truncates it with `...`
+
+---
+
+#### Tag 2 — Meta description
+
+```ts
+upsertMeta('name', 'description', description)
+```
+
+This produces:
+```html
+<meta name="description" content="Jiraboard is a fast, accessible Kanban dashboard..." />
+```
+
+| Part | Plain English |
+|------|---------------|
+| `name="description"` | "This is the description tag" |
+| `content="..."` | The actual summary text — shown in grey under the title in Google results |
+
+- Not a direct ranking factor, but it **controls click-through rate** — a well-written description = more people click your link
+- Keep it under 160 characters
+
+---
+
+#### Tag 3 — Canonical URL
+
+```ts
+let canonicalEl = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+if (!canonicalEl) {
+  canonicalEl = document.createElement('link')
+  canonicalEl.setAttribute('rel', 'canonical')
+  document.head.appendChild(canonicalEl)
+}
+canonicalEl.setAttribute('href', canonical)
+```
+
+- Finds the existing `<link rel="canonical">` tag (already in `index.html`) or creates one
+- Updates its `href` to match the current page's URL
+- This is the **most important tag for duplicate-content prevention** — without it, `/?utm_source=email` and `/` look like two different pages to Google
+
+---
+
+#### Tag 4 — Robots directive
+
+```ts
+upsertMeta('name', 'robots', noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1')
+```
+
+This produces:
+```html
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+```
+
+| Value | What it tells Google |
+|-------|----------------------|
+| `index` | "Please add this page to your search index" |
+| `follow` | "Please follow the links on this page to discover more pages" |
+| `max-image-preview:large` | "You can show a large image preview in search results" |
+| `max-snippet:-1` | "You can show as much text preview as you want" (no character limit) |
+| `noindex, nofollow` | "Skip this page entirely" — used for `/admin`, `/login`, private dashboards |
+
+> 🧠 The `noIndex` prop on `<SEOHead>` lets you flip this per page: `<SEOHead noIndex={true} ... />` on any page you want hidden from Google.
+
+---
+
+#### Tags 5–10 — Open Graph (Facebook, LinkedIn, WhatsApp)
+
+```ts
+upsertMeta('property', 'og:title', title)
+upsertMeta('property', 'og:description', description)
+upsertMeta('property', 'og:url', canonical)
+upsertMeta('property', 'og:image', ogImage)
+upsertMeta('property', 'og:type', 'website')
+upsertMeta('property', 'og:site_name', 'Jiraboard')
+```
+
+| Tag | What it controls |
+|-----|------------------|
+| `og:title` | The bold headline in the social preview card |
+| `og:description` | The summary text under the headline in the card |
+| `og:url` | The URL shown at the bottom of the card |
+| `og:image` | The thumbnail/banner image in the card |
+| `og:type` | The category — `website` for most pages, `article` for blog posts |
+| `og:site_name` | Your brand name shown as a small label above the title in the card |
+
+> 🧠 Without OG tags, Facebook/LinkedIn **guess** what to show — usually picking a random image and the wrong text. OG tags give you full control.
+
+---
+
+#### Tags 11–14 — Twitter Cards
+
+```ts
+upsertMeta('name', 'twitter:card', 'summary_large_image')
+upsertMeta('name', 'twitter:title', title)
+upsertMeta('name', 'twitter:description', description)
+upsertMeta('name', 'twitter:image', ogImage)
+```
+
+| Tag | What it controls |
+|-----|------------------|
+| `twitter:card` | The card style — `summary_large_image` = big banner image (not a tiny thumbnail) |
+| `twitter:title` | The headline on the Twitter preview card |
+| `twitter:description` | The summary text on the card |
+| `twitter:image` | The image shown on the card |
+
+> 🧠 Twitter reads OG tags as a fallback, but having explicit `twitter:*` tags gives you more control and avoids edge cases.
+
+---
+
+#### The `useEffect` dependency array
+
+```ts
+}, [title, description, canonical, ogImage, noIndex])
+```
+
+- Tells React: *"Re-run all the tag-writing code whenever any of these values change"*
+- So when a user navigates from `/` to `/about`, the tags automatically update to match the new page — no page reload needed
+- Without this, all pages would show the homepage's tags
+
+---
+
+### 🧩 How `index.html` and `SEOHead` work together
+
+```
+1. Browser requests the page
+2. Server sends index.html — static tags are already there (title, canonical, OG, etc.)
+3. Google/social crawlers read these static tags immediately (before JS runs)
+4. React loads → SEOHead runs → updates/overrides the tags with page-specific values
+5. For the homepage, the values are the same — no visible change
+6. For other pages (/about, /blog/...), SEOHead swaps in the correct tags
+```
+
+| Layer | Who reads it | When |
+|-------|-------------|------|
+| `index.html` static tags | Google, social crawlers, bots | Before JavaScript runs |
+| `SEOHead` dynamic tags | Browser, users, SPA navigation | After React loads |
+
+> 🛡️ This two-layer approach means your SEO works even if a crawler doesn't execute JavaScript — which many still don't.
+
+---
+
+### 🧩 How to use `SEOHead` on a new page
+
+When you add a new route (e.g. `/about`), drop `<SEOHead>` at the top of that page component:
+
+```tsx
+import SEOHead from '../components/SEOHead'
+
+export default function About() {
+  return (
+    <>
+      <SEOHead
+        title="About – Jiraboard"
+        description="Learn about the team behind Jiraboard."
+        canonical="https://yoursite.com/about"
+      />
+      {/* rest of the page */}
+    </>
+  )
+}
+```
+
+For a page you want hidden from Google (e.g. a settings page):
+
+```tsx
+<SEOHead
+  title="Settings – Jiraboard"
+  description="Manage your account settings."
+  canonical="https://yoursite.com/settings"
+  noIndex={true}
+/>
+```
+
+---
+
+### 🎯 Summary — why all of this matters
+
+| Tag | Problem it solves |
+|-----|-------------------|
+| `canonical` | Stops Google penalising you for the same page appearing at multiple URLs |
+| `description` | Controls the summary text in search results — affects how many people click your link |
+| `robots` | Tells Google exactly what to do with each page — index it, skip it, or show rich previews |
+| `og:*` | Controls how your link looks when shared on Facebook, LinkedIn, WhatsApp |
+| `twitter:*` | Controls how your link looks when shared on Twitter/X |
+| `SEOHead` component | Makes all of the above **per-page** and **automatic** — no manual `<head>` editing needed |
+
+> 🎯 **One-line summary:** Meta tags are notes you leave for Google and social platforms. The canonical tag is the most important one — it tells Google which URL is the "real" version of a page, preventing duplicate-content penalties that hurt your ranking.
+
+---
+
+*Last updated: May 1, 2026 — Canonical & Meta Tags section added.*

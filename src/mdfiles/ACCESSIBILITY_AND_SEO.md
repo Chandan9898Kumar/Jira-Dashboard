@@ -508,3 +508,157 @@ For a page you want hidden from Google (e.g. a settings page):
 ---
 
 *Last updated: May 1, 2026 — Canonical & Meta Tags section added.*
+
+---
+
+## 8. `public/manifest.json` — line by line
+
+### 🤔 What is manifest.json, in human language?
+
+It is the **ID card of your web app**. When a user clicks "Install App" or "Add to Home Screen", the browser reads this file to know what to call the app, what icon to show, what colour the title bar should be, and how the app window should look.
+
+Without it, the browser treats your site as just a website — not an installable app.
+
+---
+
+### 🧩 Every field explained
+
+```json
+"name": "Jiraboard – Kanban Project Dashboard"
+```
+The **full name** of your app. Shown in:
+- The install prompt dialog: *"Install Jiraboard – Kanban Project Dashboard?"*
+- The splash screen while the app is loading
+- App store listings if you publish via PWA Builder
+
+---
+
+```json
+"short_name": "Jiraboard"
+```
+The **short name** — used when there is not enough space for the full name. For example, the label under an Android home screen icon has limited space, so "Jiraboard" is shown instead of the full name. Keep it under 12 characters.
+
+---
+
+```json
+"description": "Fast, accessible Kanban dashboard..."
+```
+A plain English description of what your app does. Used by app stores, search engines, and accessibility tools to understand the app's purpose.
+
+---
+
+```json
+"start_url": "/"
+```
+The URL that opens when the user **launches the installed app** from their home screen or desktop. `/` means the homepage. You could set this to `/dashboard` if you want the app to skip a landing page and open directly on the board.
+
+---
+
+```json
+"display": "standalone"
+```
+The **fallback display mode** — how the app window looks if `display_override` (below) is not supported by the browser. `standalone` means:
+- No browser address bar
+- No browser back/forward buttons
+- Looks and feels like a native app
+
+---
+
+```json
+"display_override": ["window-controls-overlay", "standalone", "minimal-ui"]
+```
+A **priority list** of display modes. The browser tries each one from left to right and uses the first it supports. Think of it as: *"Try my first choice, if not supported try second, then third."*
+
+| Value | What it does | Supported on |
+|-------|-------------|-------------|
+| `window-controls-overlay` | Removes the default title bar completely. Your `theme_color` blue fills the entire top of the window. The OS close/minimise/maximise buttons float over your content. Makes the app look truly native. | Chrome/Edge desktop only |
+| `standalone` | Normal installed-app look — no browser chrome, but keeps the standard OS title bar | All modern browsers |
+| `minimal-ui` | Shows just a tiny toolbar with a back button. Last resort fallback. | Most browsers |
+
+---
+
+```json
+"protocol_handlers": [
+  {
+    "protocol": "web+jiraboard",
+    "url": "/?protocol=%s"
+  }
+]
+```
+This registers your app as the **handler for a custom URL protocol**. Once installed, if someone clicks a link like `web+jiraboard://board/sprint-24` anywhere on the web, the OS opens your PWA instead of a browser tab.
+
+Real-world analogy: when you click a `mailto:` link, your email app opens. When you click a `spotify:` link, Spotify opens. This does the same for your app.
+
+| Field | Plain English |
+|-------|---------------|
+| `protocol` | The custom protocol name. Must start with `web+` — browser security rule to stop apps hijacking built-in protocols like `https://` |
+| `url` | The page inside your app that handles the incoming link. `%s` is a placeholder the browser replaces with the full protocol URL. So `web+jiraboard://board/sprint-24` opens your app at `/?protocol=web+jiraboard://board/sprint-24` |
+
+---
+
+```json
+"background_color": "#ffffff"
+```
+The colour shown on the **splash screen** while the app is loading — the screen users see for ~1–2 seconds between tapping the icon and the app fully rendering. White matches the app's background so there's no jarring colour flash.
+
+---
+
+```json
+"theme_color": "#0052cc"
+```
+The colour of the **browser toolbar / title bar / status bar**:
+- On Android Chrome, this colours the top status bar to match your brand
+- On desktop with `window-controls-overlay`, this fills the custom title bar area
+- Must match `<meta name="theme-color">` in `index.html` — they work together
+
+---
+
+```json
+"icons": [...]
+```
+The list of app icons the OS can use. Each icon is listed **twice** — once for `any` and once for `maskable` — because they serve different purposes:
+
+| `purpose` | What it means | When it's used |
+|-----------|--------------|----------------|
+| `any` | Use the icon as-is, no cropping | Desktop browsers, older Android, Windows taskbar |
+| `maskable` | The OS is allowed to crop this icon into a circle or squircle shape. The logo must sit inside the centre 80% of the image (the "safe zone") so the crop never cuts into it | Modern Android home screens |
+
+Why list them separately? Because combining them as `"any maskable"` in one entry forces the browser to use the same image for both — the padding needed for maskable makes the icon look too small for `any`, and vice versa. Separate entries let the browser pick the right one for each context.
+
+Why two sizes (192 and 512)?
+- `192x192` — Android home screen, app drawer, smaller displays
+- `512x512` — Splash screen, high-DPI displays, Play Store listing
+
+---
+
+```json
+"screenshots": [...]
+```
+Preview images shown in the **install prompt**. When a user is about to install your PWA, Chrome shows a mini preview of what the app looks like — like an app store listing. Without screenshots, the install prompt is a plain boring dialog. With screenshots, it shows a rich card with app previews.
+
+| Field | Plain English |
+|-------|---------------|
+| `src` | Path to the screenshot image |
+| `sizes` | Pixel dimensions — tells the browser the aspect ratio of the preview |
+| `type` | File format — always declare so the browser doesn't have to guess |
+| `label` | A human-readable description for accessibility tools |
+| `form_factor: "wide"` | Marks this as a **desktop** screenshot. Without it, the browser treats it as mobile. You need at least one `wide` screenshot to unlock the richer install UI on desktop, and at least one without `form_factor` (or with a non-wide value) to unlock it on mobile |
+
+---
+
+### 🎯 Summary — what each field controls
+
+| Field | Controls |
+|-------|----------|
+| `name` / `short_name` | What the app is called in the install prompt and on the home screen |
+| `start_url` | Which page opens when the app is launched |
+| `display` / `display_override` | How the app window looks — from full native feel to minimal browser UI |
+| `protocol_handlers` | Lets your app open when custom `web+` links are clicked anywhere |
+| `background_color` | The splash screen colour while the app loads |
+| `theme_color` | The title bar / status bar colour |
+| `icons` | The icon shown on home screen, taskbar, splash screen |
+| `screenshots` | The preview images shown in the install prompt |
+
+---
+
+*Last updated: May 1, 2026 — manifest.json section added.*

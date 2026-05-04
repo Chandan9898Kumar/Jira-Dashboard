@@ -20,7 +20,10 @@ export default defineConfig({
   // ── Dev server ─────────────────────────────────────────────────────────────
   server: {
     port: 5173,   // lock the dev port so it never randomly changes
-    open: true,  // auto-open the browser on every npm run dev
+    open: true,   // auto-open the browser on every npm run dev
+    watch: {
+      usePolling: true, // ensures file changes are detected reliably on Windows
+    },
   },
 
   // ── Preview server (npm run preview) ──────────────────────────────────────

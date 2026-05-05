@@ -1,4 +1,4 @@
-import type { Task } from "@/../src/schema/types";
+import type { Task } from "@/schema/types";
 
 export const STORAGE_KEY = "jira-dashboard-tasks-v1";
 

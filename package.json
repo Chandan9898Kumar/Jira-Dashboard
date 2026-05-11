@@ -1,16 +1,42 @@
 {
   "name": "jira-dashboard",
+  "version": "1.0.0",
+  "description": "Fast, accessible Kanban project dashboard with drag-and-drop, search, filters and PWA support.",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "author": "Jiraboard",
+  "license": "MIT",
+  "homepage": "https://id-preview--3442eccc-4121-4ae6-8dbf-4466418a15e4.lovable.app",
+  "keywords": [
+    "kanban",
+    "jira",
+    "project-management",
+    "react",
+    "typescript",
+    "pwa",
+    "drag-and-drop"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
     "preview": "vite preview",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc -p tsconfig.app.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "react": "^19.2.5",
